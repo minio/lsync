@@ -26,44 +26,64 @@ import (
 	. "github.com/minio/lsync"
 )
 
-func TestSimpleWriteLock(t *testing.T) {
+func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 
 	lrwm := NewLRWMutex("resource")
 
-	if !lrwm.GetRLock(1000 * time.Millisecond) {
+	if !lrwm.GetRLock(time.Second) {
 		panic("Failed to acquire read lock")
 	}
-	fmt.Println("1st read lock acquired, waiting...")
+	// fmt.Println("1st read lock acquired, waiting...")
 
-	if !lrwm.GetRLock(1000 * time.Millisecond) {
+	if !lrwm.GetRLock(time.Second) {
 		panic("Failed to acquire read lock")
 	}
-	fmt.Println("2nd read lock acquired, waiting...")
+	// fmt.Println("2nd read lock acquired, waiting...")
 
 	go func() {
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(2*time.Second)
 		lrwm.RUnlock()
-		fmt.Println("1st read lock released, waiting...")
+		// fmt.Println("1st read lock released, waiting...")
 	}()
 
 	go func() {
-		time.Sleep(2000 * time.Millisecond)
+		time.Sleep(3*time.Second)
 		lrwm.RUnlock()
-		fmt.Println("2nd read lock released, waiting...")
+		// fmt.Println("2nd read lock released, waiting...")
 	}()
 
-	fmt.Println("Trying to acquire write lock, waiting...")
-	if lrwm.GetLock(1000 * time.Millisecond) {
-		fmt.Println("Write lock acquired, waiting...")
-		time.Sleep(2500 * time.Millisecond)
+	// fmt.Println("Trying to acquire write lock, waiting...")
+	locked = lrwm.GetLock(duration)
+	if locked {
+		// fmt.Println("Write lock acquired, waiting...")
+		time.Sleep(1*time.Second)
 
 		lrwm.Unlock()
 	} else {
-		fmt.Println("Write lock failed due to timeout")
+		// fmt.Println("Write lock failed due to timeout")
 	}
+	return
 }
 
 func TestDualWriteLock(t *testing.T) {
+func TestSimpleWriteLockAcquired(t *testing.T) {
+	locked := testSimpleWriteLock(t, 5*time.Second)
+
+	expected := true
+	if locked != expected {
+		t.Errorf("TestSimpleWriteLockAcquired(): \nexpected %#v\ngot      %#v", expected, locked)
+	}
+}
+
+func TestSimpleWriteLockTimedOut(t *testing.T) {
+	locked := testSimpleWriteLock(t, time.Second)
+
+	expected := false
+	if locked != expected {
+		t.Errorf("TestSimpleWriteLockTimedOut(): \nexpected %#v\ngot      %#v", expected, locked)
+	}
+}
+
 
 	lrwm := NewLRWMutex("resource")
 
