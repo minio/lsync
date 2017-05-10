@@ -65,7 +65,6 @@ func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	return
 }
 
-func TestDualWriteLock(t *testing.T) {
 func TestSimpleWriteLockAcquired(t *testing.T) {
 	locked := testSimpleWriteLock(t, 5*time.Second)
 
@@ -85,26 +84,53 @@ func TestSimpleWriteLockTimedOut(t *testing.T) {
 }
 
 
+func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
+
 	lrwm := NewLRWMutex("resource")
 
-	fmt.Println("Getting initial write lock")
-	if !lrwm.GetLock(1500 * time.Millisecond) {
+	// fmt.Println("Getting initial write lock")
+	if !lrwm.GetLock(time.Second) {
 		panic("Failed to acquire initial write lock")
 	}
 
 	go func() {
-		time.Sleep(2500 * time.Millisecond)
+		time.Sleep(2*time.Second)
 		lrwm.Unlock()
-		fmt.Println("Initial write lock released, waiting...")
+		// fmt.Println("Initial write lock released, waiting...")
 	}()
 
-	fmt.Println("Trying to acquire 2nd write lock, waiting...")
-	if lrwm.GetLock(1000 * time.Millisecond) {
-		fmt.Println("2nd write lock acquired, waiting...")
-		time.Sleep(2500 * time.Millisecond)
+	// fmt.Println("Trying to acquire 2nd write lock, waiting...")
+	locked = lrwm.GetLock(duration)
+	if locked {
+		// fmt.Println("2nd write lock acquired, waiting...")
+		time.Sleep(time.Second)
 
 		lrwm.Unlock()
 	} else {
-		fmt.Println("2nd write lock failed due to timeout")
+		// fmt.Println("2nd write lock failed due to timeout")
+	}
+	return
+}
+
+func TestDualWriteLockAcquired(t *testing.T) {
+	locked := testDualWriteLock(t, 3*time.Second)
+
+	expected := true
+	if locked != expected {
+		t.Errorf("TestDualWriteLockAcquired(): \nexpected %#v\ngot      %#v", expected, locked)
+	}
+
+}
+
+func TestDualWriteLockTimedOut(t *testing.T) {
+	locked := testDualWriteLock(t, time.Second)
+
+	expected := false
+	if locked != expected {
+		t.Errorf("TestDualWriteLockTimedOut(): \nexpected %#v\ngot      %#v", expected, locked)
+	}
+
+}
+
 	}
 }
