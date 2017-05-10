@@ -46,7 +46,7 @@ func TestSimpleWriteLock(t *testing.T) {
 		fmt.Println("1st read lock released, waiting...")
 	}()
 
-	 go func() {
+	go func() {
 		time.Sleep(2000 * time.Millisecond)
 		lrwm.RUnlock()
 		fmt.Println("2nd read lock released, waiting...")

@@ -17,8 +17,8 @@
 package lsync
 
 import (
-	"sync/atomic"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -37,7 +37,7 @@ type LRWMutex struct {
 // NewLRWMutex - initializes a new lsync RW mutex.
 func NewLRWMutex(name string) *LRWMutex {
 	return &LRWMutex{
-		Name:       name,
+		Name: name,
 	}
 }
 
