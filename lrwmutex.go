@@ -29,7 +29,7 @@ const READLOCKS = 1
 // A LRWMutex is a mutual exclusion lock with timeouts.
 type LRWMutex struct {
 	state     int64
-	readLocks uint64
+	readLocks int64
 	Name      string
 	m         sync.Mutex // Mutex to prevent multiple simultaneous locks
 }
@@ -97,13 +97,13 @@ func (lm *LRWMutex) lockLoop(timeout time.Duration, isWriteLock bool) bool {
 			} else {
 				success = atomic.CompareAndSwapInt64(&lm.state, NOLOCKS, READLOCKS)
 				if success {
-					atomic.StoreUint64(&lm.readLocks, 1)
+					atomic.StoreInt64(&lm.readLocks, 1)
 				} else {
 					// check whether we already have a read lock
 					success = atomic.CompareAndSwapInt64(&lm.state, READLOCKS, READLOCKS)
 					if success {
 						// 2nd or higher read lock acquired, increment readlocks
-						atomic.AddUint64(&lm.readLocks, 1)
+						atomic.AddInt64(&lm.readLocks, 1)
 					}
 				}
 			}
@@ -153,11 +153,13 @@ func (lm *LRWMutex) unlock(isWriteLock bool) (unlocked bool) {
 	if isWriteLock {
 		unlocked = atomic.CompareAndSwapInt64(&lm.state, WRITELOCK, NOLOCKS)
 	} else {
-		readlocks := atomic.AddUint64(&lm.readLocks, ^uint64(0)) // decrement by one
+		readlocks := atomic.AddInt64(&lm.readLocks, -1)
 		if readlocks > 0 {
 			unlocked = true // successfully released a read lock
+		} else if readlocks < 0 {
+			unlocked = false // unlocked called without any read active read locks
 		} else {
-			// We are down to our last last read lock
+			// We are down to our last read lock
 			unlocked = atomic.CompareAndSwapInt64(&lm.state, READLOCKS, NOLOCKS)
 		}
 	}

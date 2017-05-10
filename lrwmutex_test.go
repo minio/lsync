@@ -21,9 +21,12 @@ package lsync_test
 import (
 	"fmt"
 	"testing"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	. "github.com/minio/lsync"
+	"runtime"
 )
 
 func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
@@ -286,5 +289,51 @@ func TestDRLocker(t *testing.T) {
 		}
 		wl.Unlock()
 	}
+}
+
+// Borrowed from rwmutex_test.go
+func TestUnlockPanic(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("unlock of unlocked RWMutex did not panic")
+		}
+	}()
+	mu := NewLRWMutex("test")
+	mu.Unlock()
+}
+
+// Borrowed from rwmutex_test.go
+func TestUnlockPanic2(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("unlock of unlocked RWMutex did not panic")
+		}
+	}()
+	mu := NewLRWMutex("test-unlock-panic-2")
+	mu.RLock()
+	mu.Unlock()
+}
+
+// Borrowed from rwmutex_test.go
+func TestRUnlockPanic(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("read unlock of unlocked RWMutex did not panic")
+		}
+	}()
+	mu := NewLRWMutex("test")
+	mu.RUnlock()
+}
+
+// Borrowed from rwmutex_test.go
+func TestRUnlockPanic2(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("read unlock of unlocked RWMutex did not panic")
+		}
+	}()
+	mu := NewLRWMutex("test-runlock-panic-2")
+	mu.Lock()
+	mu.RUnlock()
 }
 
