@@ -22,13 +22,13 @@ Local syncing package with support for timeouts.
 func (lm *LRWMutex) Lock()
 ```
 ```go
-func (lm *LRWMutex) GetLock(timeout time.Duration) bool
+func (lm *LRWMutex) GetLock(timeout time.Duration) (locked bool)
 ```
 ```go
 func (lm *LRWMutex) RLock()
 ```
 ```go
-func (lm *LRWMutex) GetRLock(timeout time.Duration) bool
+func (lm *LRWMutex) GetRLock(timeout time.Duration) (locked bool)
 ```
 ```go
 func (lm *LRWMutex) Unlock()

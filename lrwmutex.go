@@ -52,7 +52,7 @@ func (lm *LRWMutex) Lock() {
 }
 
 // GetLock tries to get a write lock on dm before the timeout occurs.
-func (lm *LRWMutex) GetLock(timeout time.Duration) bool {
+func (lm *LRWMutex) GetLock(timeout time.Duration) (locked bool) {
 
 	isWriteLock := true
 	return lm.lockLoop(timeout, isWriteLock)
@@ -69,7 +69,7 @@ func (lm *LRWMutex) RLock() {
 }
 
 // GetRLock tries to get a read lock on dm before the timeout occurs.
-func (lm *LRWMutex) GetRLock(timeout time.Duration) bool {
+func (lm *LRWMutex) GetRLock(timeout time.Duration) (locked bool) {
 
 	isWriteLock := false
 	return lm.lockLoop(timeout, isWriteLock)
