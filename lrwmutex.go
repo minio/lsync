@@ -165,3 +165,14 @@ func (lm *LRWMutex) unlock(isWriteLock bool) (unlocked bool) {
 	lm.m.Unlock()
 	return unlocked
 }
+
+// DRLocker returns a sync.Locker interface that implements
+// the Lock and Unlock methods by calling drw.RLock and drw.RUnlock.
+func (dm *LRWMutex) DRLocker() sync.Locker {
+	return (*drlocker)(dm)
+}
+
+type drlocker LRWMutex
+
+func (dr *drlocker) Lock()   { (*LRWMutex)(dr).RLock() }
+func (dr *drlocker) Unlock() { (*LRWMutex)(dr).RUnlock() }
