@@ -337,3 +337,45 @@ func TestRUnlockPanic2(t *testing.T) {
 	mu.RUnlock()
 }
 
+// Borrowed from rwmutex_test.go
+func benchmarkRWMutex(b *testing.B, localWork, writeRatio int) {
+	rwm := NewLRWMutex("test")
+	b.RunParallel(func(pb *testing.PB) {
+		foo := 0
+		for pb.Next() {
+			foo++
+			if foo%writeRatio == 0 {
+				rwm.Lock()
+				rwm.Unlock()
+			} else {
+				rwm.RLock()
+				for i := 0; i != localWork; i += 1 {
+					foo *= 2
+					foo /= 2
+				}
+				rwm.RUnlock()
+			}
+		}
+		_ = foo
+	})
+}
+
+// Borrowed from rwmutex_test.go
+func BenchmarkRWMutexWrite100(b *testing.B) {
+	benchmarkRWMutex(b, 0, 100)
+}
+
+// Borrowed from rwmutex_test.go
+func BenchmarkRWMutexWrite10(b *testing.B) {
+	benchmarkRWMutex(b, 0, 10)
+}
+
+// Borrowed from rwmutex_test.go
+func BenchmarkRWMutexWorkWrite100(b *testing.B) {
+	benchmarkRWMutex(b, 100, 100)
+}
+
+// Borrowed from rwmutex_test.go
+func BenchmarkRWMutexWorkWrite10(b *testing.B) {
+	benchmarkRWMutex(b, 100, 10)
+}
