@@ -168,6 +168,16 @@ func (lm *LRWMutex) unlock(isWriteLock bool) (unlocked bool) {
 	return unlocked
 }
 
+// ForceUnlock will forcefully clear a write or read lock.
+func (lm *LRWMutex) ForceUnlock() {
+	lm.m.Lock()
+
+	atomic.StoreInt64(&lm.state, NOLOCKS)
+	atomic.StoreInt64(&lm.readLocks, 0)
+
+	lm.m.Unlock()
+}
+
 // DRLocker returns a sync.Locker interface that implements
 // the Lock and Unlock methods by calling drw.RLock and drw.RUnlock.
 func (dm *LRWMutex) DRLocker() sync.Locker {
