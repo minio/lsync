@@ -36,3 +36,15 @@ func (lm *LRWMutex) Unlock()
 ```go
 func (lm *LRWMutex) RUnlock()
 ```
+
+### Frequently Accessed Shared Values
+
+An `lsync.LFrequentAccess` provides an atomic load and store of a consistently typed value.
+
+```
+benchmark                           old ns/op     new ns/op     delta
+BenchmarkLFrequentAccessMap-8       114           4.67          -95.90%
+BenchmarkLFrequentAccessSlice-8     109           5.95          -94.54%
+```
+
+
