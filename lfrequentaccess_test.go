@@ -93,3 +93,53 @@ func BenchmarkLFrequentAccessMapRegularMutex(b *testing.B) {
 		}
 	})
 }
+
+type Slice []string
+
+type SliceMutex struct {
+	mu  sync.Mutex
+	slc Slice
+}
+
+func BenchmarkLFrequentAccessSlice(b *testing.B) {
+
+	m := NewLFrequentAccess(make(Slice, 0))
+
+	cur := m.LockBeforeSet().(Slice)
+	slc := make(Slice, len(cur))
+	for i, v := range cur {
+		slc[i] = v
+	}
+	slc = append(slc, val)
+	m.SetNewCopy(slc)
+	m.UnlockAfterSet()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			slc := m.ReadOnlyAccess().(Slice)
+			if slc[0] != val {
+				panic("Expected key value")
+			}
+		}
+	})
+}
+
+func BenchmarkLFrequentAccessSliceRegularMutex(b *testing.B) {
+	s := SliceMutex{}
+
+	s.slc = make(Slice, 0)
+	s.mu.Lock()
+	s.slc = append(s.slc, val)
+	s.mu.Unlock()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			s.mu.Lock()
+			slc := s.slc
+			if slc[0] != val {
+				panic("Expected key value")
+			}
+			s.mu.Unlock()
+		}
+	})
+}
