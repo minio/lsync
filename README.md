@@ -72,7 +72,16 @@ func (lm *LFrequentAccess) SetNewCopyAndUnlock(newCopy interface{})
 
 ### sync.Mutex vs lsync.LMutex 
 
-(with `defaultRetryUnit` and `defaultRetryCap` at 1 ms)
+(with `defaultRetryUnit` and `defaultRetryCap` at 10 microsec)
+
+```
+BenchmarkMutex-8                   111           1579          +1322.52%
+BenchmarkMutexSlack-8              120           1033          +760.83%
+BenchmarkMutexWork-8               133           1604          +1106.02%
+BenchmarkMutexWorkSlack-8          137           1038          +657.66%
+```
+
+(with `defaultRetryUnit` and `defaultRetryCap` at 1 millisec)
 ```
 benchmark                          old ns/op     new ns/op     delta
 BenchmarkMutex-8                   111           2649          +2286.49%
@@ -81,7 +90,7 @@ BenchmarkMutexWork-8               133           2637          +1882.71%
 BenchmarkMutexWorkSlack-8          137           1729          +1162.04%
 ```
 
-(with `defaultRetryUnit` and `defaultRetryCap` at 100 ms)
+(with `defaultRetryUnit` and `defaultRetryCap` at 100 millisec)
 
 ```
 benchmark                          old ns/op     new ns/op     delta
