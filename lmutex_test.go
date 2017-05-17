@@ -64,3 +64,33 @@ func TestLMutexWithTimeout(t *testing.T) {
 		<-c
 	}
 }
+
+func BenchmarkLMutexUncontended(b *testing.B) {
+	type PaddedMutex struct {
+		LMutex
+		pad [128]uint8
+	}
+	b.RunParallel(func(pb *testing.PB) {
+		var mu PaddedMutex
+		for pb.Next() {
+			mu.Lock()
+			mu.Unlock()
+		}
+	})
+}
+
+func BenchmarkLMutexUncontendedWithTimeout(b *testing.B) {
+	type PaddedMutex struct {
+		LMutex
+		pad [128]uint8
+	}
+	b.RunParallel(func(pb *testing.PB) {
+		var mu PaddedMutex
+		for pb.Next() {
+			if !mu.GetLock(3 * time.Second) {
+				panic("BenchmarkMutexUncontendedWithTimeout: failed to get lock")
+			}
+			mu.Unlock()
+		}
+	})
+}
