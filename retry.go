@@ -123,8 +123,8 @@ func newRetryTimerWithJitter(unit time.Duration, cap time.Duration, jitter float
 
 // Default retry constants.
 const (
-	defaultRetryUnit = time.Second     // 1 second.
-	defaultRetryCap  = 1 * time.Second // 1 second.
+	defaultRetryUnit = 10 * time.Millisecond // 10 millisecond.
+	defaultRetryCap  = 10 * time.Millisecond // 10 millisecond.
 )
 
 // newRetryTimer creates a timer with exponentially increasing delays
