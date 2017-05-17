@@ -131,3 +131,42 @@ func BenchmarkLMutexWork(b *testing.B) {
 func BenchmarkLMutexWorkSlack(b *testing.B) {
 	benchmarkLMutex(b, true, true)
 }
+
+func benchmarkLMutexWithTimeout(b *testing.B, slack, work bool) {
+	var mu LMutex
+	if slack {
+		b.SetParallelism(10)
+	}
+	b.RunParallel(func(pb *testing.PB) {
+		foo := 0
+		for pb.Next() {
+			if !mu.GetLock(3 * time.Second) {
+				panic("benchmarkLMutexWithTimeout: failed to get lock")
+			}
+			mu.Unlock()
+			if work {
+				for i := 0; i < 100; i++ {
+					foo *= 2
+					foo /= 2
+				}
+			}
+		}
+		_ = foo
+	})
+}
+
+func BenchmarkLMutexWithTimeout(b *testing.B) {
+	benchmarkLMutexWithTimeout(b, false, false)
+}
+
+func BenchmarkLMutexSlackWithTimeout(b *testing.B) {
+	benchmarkLMutexWithTimeout(b, true, false)
+}
+
+func BenchmarkLMutexWorkWithTimeout(b *testing.B) {
+	benchmarkLMutexWithTimeout(b, false, true)
+}
+
+func BenchmarkLMutexWorkSlackWithTimeout(b *testing.B) {
+	benchmarkLMutexWithTimeout(b, true, true)
+}
