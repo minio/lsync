@@ -94,3 +94,40 @@ func BenchmarkLMutexUncontendedWithTimeout(b *testing.B) {
 		}
 	})
 }
+
+func benchmarkLMutex(b *testing.B, slack, work bool) {
+	var mu LMutex
+	if slack {
+		b.SetParallelism(10)
+	}
+	b.RunParallel(func(pb *testing.PB) {
+		foo := 0
+		for pb.Next() {
+			mu.Lock()
+			mu.Unlock()
+			if work {
+				for i := 0; i < 100; i++ {
+					foo *= 2
+					foo /= 2
+				}
+			}
+		}
+		_ = foo
+	})
+}
+
+func BenchmarkLMutex(b *testing.B) {
+	benchmarkLMutex(b, false, false)
+}
+
+func BenchmarkLMutexSlack(b *testing.B) {
+	benchmarkLMutex(b, true, false)
+}
+
+func BenchmarkLMutexWork(b *testing.B) {
+	benchmarkLMutex(b, false, true)
+}
+
+func BenchmarkLMutexWorkSlack(b *testing.B) {
+	benchmarkLMutex(b, true, true)
+}
