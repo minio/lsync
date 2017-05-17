@@ -43,3 +43,24 @@ func TestLMutex(t *testing.T) {
 		<-c
 	}
 }
+
+func HammerLMutexWithTimeout(m *LMutex, loops int, cdone chan bool) {
+	for i := 0; i < loops; i++ {
+		if !m.GetLock(3 * time.Second) {
+			panic("HammerLMutexWithTimeout: failed to get lock")
+		}
+		m.Unlock()
+	}
+	cdone <- true
+}
+
+func TestLMutexWithTimeout(t *testing.T) {
+	m := NewLMutex()
+	c := make(chan bool)
+	for i := 0; i < 10; i++ {
+		go HammerLMutexWithTimeout(m, 1000, c)
+	}
+	for i := 0; i < 10; i++ {
+		<-c
+	}
+}
