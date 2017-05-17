@@ -69,15 +69,6 @@ func (lm *LFrequentAccess) SetNewCopyAndUnlock(newCopy interface{})
 ```
 
 ## Benchmarks
-### LFrequentAccess
-
-An `lsync.LFrequentAccess` provides an atomic load and store of a consistently typed value.
-
-```
-benchmark                           old ns/op     new ns/op     delta
-BenchmarkLFrequentAccessMap-8       114           4.67          -95.90%
-BenchmarkLFrequentAccessSlice-8     109           5.95          -94.54%
-```
 
 ### sync.Mutex vs lsync.LMutex 
 
@@ -98,4 +89,14 @@ BenchmarkMutex-8                   111           2649          +2286.49%
 BenchmarkMutexSlack-8              120           2478          +1965.00%
 BenchmarkMutexWork-8               133           2547          +1815.04%
 BenchmarkMutexWorkSlack-8          137           2683          +1858.39%
+```
+
+### LFrequentAccess
+
+An `lsync.LFrequentAccess` provides an atomic load and store of a consistently typed value.
+
+```
+benchmark                           old ns/op     new ns/op     delta
+BenchmarkLFrequentAccessMap-8       114           4.67          -95.90%
+BenchmarkLFrequentAccessSlice-8     109           5.95          -94.54%
 ```
