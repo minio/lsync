@@ -23,7 +23,7 @@ import (
 
 // A LMutex is a mutual exclusion lock with timeouts.
 type LMutex struct {
-	state     int64
+	state int64
 }
 
 // NewLMutex - initializes a new lsync mutex.
@@ -36,7 +36,7 @@ func NewLMutex() *LMutex {
 // If the lock is already in use, the calling go routine
 // blocks until the mutex is available.
 func (lm *LMutex) Lock() {
-	lm.lockLoop(time.Duration(1<<63-1))
+	lm.lockLoop(time.Duration(1<<63 - 1))
 }
 
 // GetLock tries to get a write lock on lm before the timeout occurs.

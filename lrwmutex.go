@@ -27,8 +27,8 @@ const READLOCKS = 1
 
 // A LRWMutex is a mutual exclusion lock with timeouts.
 type LRWMutex struct {
-	state     int64
-	m         sync.Mutex // Mutex to prevent multiple simultaneous locks
+	state int64
+	m     sync.Mutex // Mutex to prevent multiple simultaneous locks
 }
 
 // NewLRWMutex - initializes a new lsync RW mutex.

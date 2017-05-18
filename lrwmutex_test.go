@@ -20,9 +20,9 @@ package lsync_test
 
 import (
 	"fmt"
-	"testing"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	. "github.com/minio/lsync"
@@ -44,13 +44,13 @@ func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	// fmt.Println("2nd read lock acquired, waiting...")
 
 	go func() {
-		time.Sleep(2*time.Second)
+		time.Sleep(2 * time.Second)
 		lrwm.RUnlock()
 		// fmt.Println("1st read lock released, waiting...")
 	}()
 
 	go func() {
-		time.Sleep(3*time.Second)
+		time.Sleep(3 * time.Second)
 		lrwm.RUnlock()
 		// fmt.Println("2nd read lock released, waiting...")
 	}()
@@ -59,7 +59,7 @@ func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	locked = lrwm.GetLock(duration)
 	if locked {
 		// fmt.Println("Write lock acquired, waiting...")
-		time.Sleep(1*time.Second)
+		time.Sleep(1 * time.Second)
 
 		lrwm.Unlock()
 	} else {
@@ -86,7 +86,6 @@ func TestSimpleWriteLockTimedOut(t *testing.T) {
 	}
 }
 
-
 func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 
 	lrwm := NewLRWMutex()
@@ -97,7 +96,7 @@ func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	}
 
 	go func() {
-		time.Sleep(2*time.Second)
+		time.Sleep(2 * time.Second)
 		lrwm.Unlock()
 		// fmt.Println("Initial write lock released, waiting...")
 	}()
