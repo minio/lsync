@@ -18,7 +18,6 @@ package lsync
 
 import (
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -29,7 +28,6 @@ const READLOCKS = 1
 // A LRWMutex is a mutual exclusion lock with timeouts.
 type LRWMutex struct {
 	state     int64
-	readLocks int64
 	m         sync.Mutex // Mutex to prevent multiple simultaneous locks
 }
 
@@ -90,18 +88,14 @@ func (lm *LRWMutex) lockLoop(timeout time.Duration, isWriteLock bool) bool {
 			lm.m.Lock()
 
 			if isWriteLock {
-				success = atomic.CompareAndSwapInt64(&lm.state, NOLOCKS, WRITELOCK)
+				if lm.state == NOLOCKS {
+					lm.state = WRITELOCK
+					success = true
+				}
 			} else {
-				success = atomic.CompareAndSwapInt64(&lm.state, NOLOCKS, READLOCKS)
-				if success {
-					atomic.StoreInt64(&lm.readLocks, 1)
-				} else {
-					// check whether we already have a read lock
-					success = atomic.CompareAndSwapInt64(&lm.state, READLOCKS, READLOCKS)
-					if success {
-						// 2nd or higher read lock acquired, increment readlocks
-						atomic.AddInt64(&lm.readLocks, 1)
-					}
+				if lm.state != WRITELOCK {
+					lm.state += 1
+					success = true
 				}
 			}
 
@@ -148,16 +142,16 @@ func (lm *LRWMutex) unlock(isWriteLock bool) (unlocked bool) {
 
 	// Try to release lock.
 	if isWriteLock {
-		unlocked = atomic.CompareAndSwapInt64(&lm.state, WRITELOCK, NOLOCKS)
+		if lm.state == WRITELOCK {
+			lm.state = NOLOCKS
+			unlocked = true
+		}
 	} else {
-		readlocks := atomic.AddInt64(&lm.readLocks, -1)
-		if readlocks > 0 {
-			unlocked = true // successfully released a read lock
-		} else if readlocks < 0 {
-			unlocked = false // unlocked called without any read active read locks
+		if lm.state == WRITELOCK || lm.state == NOLOCKS {
+			unlocked = false // unlocked called without any active read locks
 		} else {
-			// We are down to our last read lock
-			unlocked = atomic.CompareAndSwapInt64(&lm.state, READLOCKS, NOLOCKS)
+			lm.state -= 1
+			unlocked = true
 		}
 	}
 
@@ -168,10 +162,7 @@ func (lm *LRWMutex) unlock(isWriteLock bool) (unlocked bool) {
 // ForceUnlock will forcefully clear a write or read lock.
 func (lm *LRWMutex) ForceUnlock() {
 	lm.m.Lock()
-
-	atomic.StoreInt64(&lm.state, NOLOCKS)
-	atomic.StoreInt64(&lm.readLocks, 0)
-
+	lm.state = NOLOCKS
 	lm.m.Unlock()
 }
 
