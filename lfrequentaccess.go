@@ -21,7 +21,9 @@ import (
 	"sync/atomic"
 )
 
-// A LFrequentAccess is a lock for infrequently updated data structures meant for copy-on-write.
+// LFrequentAccess is a synchronization mechanism for frequently read yet
+// infrequently updated data structures. It uses a copy-on-write paradigm
+// for updates to the data.
 type LFrequentAccess struct {
 	state     atomic.Value
 	writeLock sync.Mutex
@@ -49,12 +51,12 @@ func (lm *LFrequentAccess) LockBeforeSet() (constCurVersion interface{}) {
 	return lm.state.Load()
 }
 
-// SetNewCopy updates the data with a new modified copy and unlocks simultaneously.
-// Make sure to call LockBeforeSet beforehand to synchronize between potential
-// parallel writers (and not lose any updated information).
+// SetNewCopyAndUnlock updates the data with a new modified copy and unlocks
+// simultaneously. Make sure to call LockBeforeSet beforehand to synchronize
+// between potential parallel writers (and not lose any updated information).
 func (lm *LFrequentAccess) SetNewCopyAndUnlock(newCopy interface{}) {
 	if !lm.locked {
-		panic("SetNewCopy: locked state is false (did you call LockBeforeSet?)")
+		panic("SetNewCopyAndUnlock: locked state is false (did you call LockBeforeSet?)")
 	}
 	lm.state.Store(newCopy)
 	lm.locked = false
