@@ -21,35 +21,31 @@ package lsync_test
 import (
 	"testing"
 
-	"fmt"
 	. "github.com/minio/lsync"
 	"sync"
 )
 
 type Map map[string]string
 
-type MapMutex struct {
-	mu sync.Mutex
-	mp Map
-}
-
 const key = "test"
 const val = "value"
 
 func TestLFrequentAccess(t *testing.T) {
-	m := NewLFrequentAccess(make(Map))
+	// Create new LFrequentAccess for type Map
+	freqaccess := NewLFrequentAccess(make(Map))
 
-	cur := m.LockBeforeSet().(Map)
-	mp := make(Map)
-	for k, v := range cur {
+	cur := freqaccess.LockBeforeSet().(Map) // Lock in order to update
+	mp := make(Map)                         // Create new Map
+	for k, v := range cur {                 // Copy over old contents
 		mp[k] = v
 	}
-	mp[key] = val
-	m.SetNewCopy(mp)
-	m.UnlockAfterSet()
+	mp[key] = val                      // Add new value
+	freqaccess.SetNewCopyAndUnlock(mp) // Exchange old version of map with new version
 
-	mp2 := m.ReadOnlyAccess().(Map)
-	fmt.Println(mp2[key])
+	mp2 := freqaccess.ReadOnlyAccess().(Map) // Get read only access to Map
+	if mp2[key] != val {
+		t.Errorf("TestLFrequentAccess(): \nexpected %#v\ngot      %#v", val, mp2[key])
+	}
 }
 
 func BenchmarkLFrequentAccessMap(b *testing.B) {
@@ -61,8 +57,7 @@ func BenchmarkLFrequentAccessMap(b *testing.B) {
 		mp[k] = v
 	}
 	mp[key] = val
-	m.SetNewCopy(mp)
-	m.UnlockAfterSet()
+	m.SetNewCopyAndUnlock(mp)
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -75,6 +70,11 @@ func BenchmarkLFrequentAccessMap(b *testing.B) {
 }
 
 func BenchmarkLFrequentAccessMapRegularMutex(b *testing.B) {
+	type MapMutex struct {
+		mu sync.Mutex
+		mp Map
+	}
+
 	m := MapMutex{}
 
 	m.mp = make(Map)
@@ -96,11 +96,6 @@ func BenchmarkLFrequentAccessMapRegularMutex(b *testing.B) {
 
 type Slice []string
 
-type SliceMutex struct {
-	mu  sync.Mutex
-	slc Slice
-}
-
 func BenchmarkLFrequentAccessSlice(b *testing.B) {
 
 	m := NewLFrequentAccess(make(Slice, 0))
@@ -111,8 +106,7 @@ func BenchmarkLFrequentAccessSlice(b *testing.B) {
 		slc[i] = v
 	}
 	slc = append(slc, val)
-	m.SetNewCopy(slc)
-	m.UnlockAfterSet()
+	m.SetNewCopyAndUnlock(slc)
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -125,6 +119,11 @@ func BenchmarkLFrequentAccessSlice(b *testing.B) {
 }
 
 func BenchmarkLFrequentAccessSliceRegularMutex(b *testing.B) {
+	type SliceMutex struct {
+		mu  sync.Mutex
+		slc Slice
+	}
+
 	s := SliceMutex{}
 
 	s.slc = make(Slice, 0)
