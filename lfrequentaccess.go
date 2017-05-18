@@ -36,34 +36,27 @@ func NewLFrequentAccess(x interface{}) *LFrequentAccess {
 }
 
 // ReadOnlyAccess returns the data intented for reads without further synchronization
-func (lm *LFrequentAccess) ReadOnlyAccess() (readOnly interface{}) {
+func (lm *LFrequentAccess) ReadOnlyAccess() (constReadOnly interface{}) {
 	return lm.state.Load()
 }
 
 // LockBeforeSet must be called before updates of the data in order to synchronize
 // with other potential writers. It returns the current version of the data that
 // needs to be copied over into a new version.
-func (lm *LFrequentAccess) LockBeforeSet() (curVersion interface{}) {
+func (lm *LFrequentAccess) LockBeforeSet() (constCurVersion interface{}) {
 	lm.writeLock.Lock()
 	lm.locked = true
 	return lm.state.Load()
 }
 
-// SetNewCopy updates the data with a new modified copy. Make sure to call
-// LockBeforeSet beforehand and UnlockAfterSet afterwars to synchronize between
-// potential parallel writes (and not lose any updated information).
-func (lm *LFrequentAccess) SetNewCopy(newCopy interface{}) {
+// SetNewCopy updates the data with a new modified copy and unlocks simultaneously.
+// Make sure to call LockBeforeSet beforehand to synchronize between potential
+// parallel writers (and not lose any updated information).
+func (lm *LFrequentAccess) SetNewCopyAndUnlock(newCopy interface{}) {
 	if !lm.locked {
 		panic("SetNewCopy: locked state is false (did you call LockBeforeSet?)")
 	}
 	lm.state.Store(newCopy)
-}
-
-// UnlockAfterSet must be called to release the write lock after
-func (lm *LFrequentAccess) UnlockAfterSet() {
-	if !lm.locked {
-		panic("UnlockAfterSet: locked state is false (did you call LockBeforeSet?)")
-	}
 	lm.locked = false
 	lm.writeLock.Unlock()
 }
