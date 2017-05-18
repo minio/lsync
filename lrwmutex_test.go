@@ -31,7 +31,7 @@ import (
 
 func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 
-	lrwm := NewLRWMutex("resource")
+	lrwm := NewLRWMutex()
 
 	if !lrwm.GetRLock(time.Second) {
 		panic("Failed to acquire read lock")
@@ -89,7 +89,7 @@ func TestSimpleWriteLockTimedOut(t *testing.T) {
 
 func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 
-	lrwm := NewLRWMutex("resource")
+	lrwm := NewLRWMutex()
 
 	// fmt.Println("Getting initial write lock")
 	if !lrwm.GetLock(time.Second) {
@@ -144,14 +144,13 @@ func parallelReader(m *LRWMutex, clocked, cunlock, cdone chan bool) {
 		<-cunlock
 		m.RUnlock()
 		cdone <- true
-
 	}
 }
 
 // Borrowed from rwmutex_test.go
 func doTestParallelReaders(numReaders, gomaxprocs int) {
 	runtime.GOMAXPROCS(gomaxprocs)
-	m := NewLRWMutex("test-parallel")
+	m := NewLRWMutex()
 
 	clocked := make(chan bool)
 	cunlock := make(chan bool)
@@ -219,7 +218,7 @@ func HammerRWMutex(gomaxprocs, numReaders, num_iterations int) {
 	runtime.GOMAXPROCS(gomaxprocs)
 	// Number of active readers + 10000 * number of active writers.
 	var activity int32
-	rwm := NewLRWMutex("test")
+	rwm := NewLRWMutex()
 	cdone := make(chan bool)
 	go writer(rwm, num_iterations, &activity, cdone)
 	var i int
@@ -257,7 +256,7 @@ func TestRWMutex(t *testing.T) {
 
 // Borrowed from rwmutex_test.go
 func TestDRLocker(t *testing.T) {
-	wl := NewLRWMutex("test")
+	wl := NewLRWMutex()
 	var rl sync.Locker
 	wlocked := make(chan bool, 1)
 	rlocked := make(chan bool, 1)
@@ -298,7 +297,7 @@ func TestUnlockPanic(t *testing.T) {
 			t.Fatalf("unlock of unlocked RWMutex did not panic")
 		}
 	}()
-	mu := NewLRWMutex("test")
+	mu := NewLRWMutex()
 	mu.Unlock()
 }
 
@@ -309,7 +308,7 @@ func TestUnlockPanic2(t *testing.T) {
 			t.Fatalf("unlock of unlocked RWMutex did not panic")
 		}
 	}()
-	mu := NewLRWMutex("test-unlock-panic-2")
+	mu := NewLRWMutex()
 	mu.RLock()
 	mu.Unlock()
 }
@@ -321,7 +320,7 @@ func TestRUnlockPanic(t *testing.T) {
 			t.Fatalf("read unlock of unlocked RWMutex did not panic")
 		}
 	}()
-	mu := NewLRWMutex("test")
+	mu := NewLRWMutex()
 	mu.RUnlock()
 }
 
@@ -332,14 +331,14 @@ func TestRUnlockPanic2(t *testing.T) {
 			t.Fatalf("read unlock of unlocked RWMutex did not panic")
 		}
 	}()
-	mu := NewLRWMutex("test-runlock-panic-2")
+	mu := NewLRWMutex()
 	mu.Lock()
 	mu.RUnlock()
 }
 
 // Borrowed from rwmutex_test.go
 func benchmarkRWMutex(b *testing.B, localWork, writeRatio int) {
-	rwm := NewLRWMutex("test")
+	rwm := NewLRWMutex()
 	b.RunParallel(func(pb *testing.PB) {
 		foo := 0
 		for pb.Next() {

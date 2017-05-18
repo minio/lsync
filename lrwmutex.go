@@ -30,15 +30,12 @@ const READLOCKS = 1
 type LRWMutex struct {
 	state     int64
 	readLocks int64
-	Name      string
 	m         sync.Mutex // Mutex to prevent multiple simultaneous locks
 }
 
 // NewLRWMutex - initializes a new lsync RW mutex.
-func NewLRWMutex(name string) *LRWMutex {
-	return &LRWMutex{
-		Name: name,
-	}
+func NewLRWMutex() *LRWMutex {
+	return &LRWMutex{}
 }
 
 // Lock holds a write lock on lm.
