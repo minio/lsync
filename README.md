@@ -40,6 +40,16 @@ Additionally it provides `lsync.LFrequentAccess` which uses an atomic load and s
 	fmt.Println(mpReadOnly[key])                    // Safe access with no further synchronization
 ````
 
+## Design
+
+The design is pretty straightforward in the sense that `lsync` tries to get a lock in a loop with an exponential [backoff](https://www.awsarchitectureblog.com/2015/03/backoff.html) algorithm. The algorithm is configurable in terms of initial delay and jitter.
+
+If the lock is acquired before the timeout has occured, it will return success to the caller and the caller can proceed as intended. The caller must call `unlock` after the operation that is to be protected has completed in order to release the lock.
+
+When more time has elapsed than the timeout value the lock loop will cancel out and signal back to the caller that the lock has not been acquired. In this case the caller must _not_ call `unlock` since no lock was obtained. Typically it should signal an error back up the call stack so that errors can be dealt with appropriately at the correct level.
+
+Note that this algorithm is not 'real-time' in the sense that it will time out exactly at the timeout value, but instead a (short) while after the timeout has lapsed. It is even possible that (in edge cases) a succesful lock can be returned a very short time after the timeout has lapsed.
+
 ## API
 
 #### LMutex
