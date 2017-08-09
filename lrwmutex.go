@@ -21,9 +21,11 @@ import (
 	"time"
 )
 
-const WRITELOCK = -1
-const NOLOCKS = 0
-const READLOCKS = 1
+const (
+     WRITELOCK = -1 + iota
+     NOLOCKS
+     READLOCKS
+)
 
 // A LRWMutex is a mutual exclusion lock with timeouts.
 type LRWMutex struct {
