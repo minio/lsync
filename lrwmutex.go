@@ -22,9 +22,9 @@ import (
 )
 
 const (
-     WRITELOCK = -1 + iota
-     NOLOCKS
-     READLOCKS
+	WRITELOCK = -1 + iota
+	NOLOCKS
+	READLOCKS
 )
 
 // A LRWMutex is a mutual exclusion lock with timeouts.
