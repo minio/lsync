@@ -21,8 +21,9 @@ package lsync_test
 import (
 	"testing"
 
-	. "github.com/minio/lsync"
 	"time"
+
+	. "github.com/minio/lsync"
 )
 
 func HammerLMutex(m *LMutex, loops int, cdone chan bool) {
@@ -46,7 +47,7 @@ func TestLMutex(t *testing.T) {
 
 func HammerLMutexWithTimeout(m *LMutex, loops int, cdone chan bool) {
 	for i := 0; i < loops; i++ {
-		if !m.GetLock(3 * time.Second) {
+		if !m.GetLock("", "", 3*time.Second) {
 			panic("HammerLMutexWithTimeout: failed to get lock")
 		}
 		m.Unlock()
@@ -87,7 +88,7 @@ func BenchmarkLMutexUncontendedWithTimeout(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		var mu PaddedMutex
 		for pb.Next() {
-			if !mu.GetLock(3 * time.Second) {
+			if !mu.GetLock("", "", 3*time.Second) {
 				panic("BenchmarkMutexUncontendedWithTimeout: failed to get lock")
 			}
 			mu.Unlock()
@@ -140,7 +141,7 @@ func benchmarkLMutexWithTimeout(b *testing.B, slack, work bool) {
 	b.RunParallel(func(pb *testing.PB) {
 		foo := 0
 		for pb.Next() {
-			if !mu.GetLock(3 * time.Second) {
+			if !mu.GetLock("", "", 3*time.Second) {
 				panic("benchmarkLMutexWithTimeout: failed to get lock")
 			}
 			mu.Unlock()

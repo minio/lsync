@@ -25,20 +25,21 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/minio/lsync"
 	"runtime"
+
+	. "github.com/minio/lsync"
 )
 
 func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 
 	lrwm := NewLRWMutex()
 
-	if !lrwm.GetRLock(time.Second) {
+	if !lrwm.GetRLock("", "object1", time.Second) {
 		panic("Failed to acquire read lock")
 	}
 	// fmt.Println("1st read lock acquired, waiting...")
 
-	if !lrwm.GetRLock(time.Second) {
+	if !lrwm.GetRLock("", "object1", time.Second) {
 		panic("Failed to acquire read lock")
 	}
 	// fmt.Println("2nd read lock acquired, waiting...")
@@ -56,7 +57,7 @@ func testSimpleWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	}()
 
 	// fmt.Println("Trying to acquire write lock, waiting...")
-	locked = lrwm.GetLock(duration)
+	locked = lrwm.GetLock("", "", duration)
 	if locked {
 		// fmt.Println("Write lock acquired, waiting...")
 		time.Sleep(1 * time.Second)
@@ -91,7 +92,7 @@ func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	lrwm := NewLRWMutex()
 
 	// fmt.Println("Getting initial write lock")
-	if !lrwm.GetLock(time.Second) {
+	if !lrwm.GetLock("", "", time.Second) {
 		panic("Failed to acquire initial write lock")
 	}
 
@@ -102,7 +103,7 @@ func testDualWriteLock(t *testing.T, duration time.Duration) (locked bool) {
 	}()
 
 	// fmt.Println("Trying to acquire 2nd write lock, waiting...")
-	locked = lrwm.GetLock(duration)
+	locked = lrwm.GetLock("", "", duration)
 	if locked {
 		// fmt.Println("2nd write lock acquired, waiting...")
 		time.Sleep(time.Second)
@@ -138,7 +139,7 @@ func TestDualWriteLockTimedOut(t *testing.T) {
 
 // Borrowed from rwmutex_test.go
 func parallelReader(m *LRWMutex, clocked, cunlock, cdone chan bool) {
-	if m.GetRLock(time.Second) {
+	if m.GetRLock("", "", time.Second) {
 		clocked <- true
 		<-cunlock
 		m.RUnlock()
@@ -179,9 +180,9 @@ func TestParallelReaders(t *testing.T) {
 }
 
 // Borrowed from rwmutex_test.go
-func reader(rwm *LRWMutex, num_iterations int, activity *int32, cdone chan bool) {
-	for i := 0; i < num_iterations; i++ {
-		if rwm.GetRLock(time.Second) {
+func reader(rwm *LRWMutex, numIterations int, activity *int32, cdone chan bool) {
+	for i := 0; i < numIterations; i++ {
+		if rwm.GetRLock("", "", time.Second) {
 			n := atomic.AddInt32(activity, 1)
 			if n < 1 || n >= 10000 {
 				panic(fmt.Sprintf("wlock(%d)\n", n))
@@ -196,9 +197,9 @@ func reader(rwm *LRWMutex, num_iterations int, activity *int32, cdone chan bool)
 }
 
 // Borrowed from rwmutex_test.go
-func writer(rwm *LRWMutex, num_iterations int, activity *int32, cdone chan bool) {
-	for i := 0; i < num_iterations; i++ {
-		if rwm.GetLock(time.Second) {
+func writer(rwm *LRWMutex, numIterations int, activity *int32, cdone chan bool) {
+	for i := 0; i < numIterations; i++ {
+		if rwm.GetLock("", "", time.Second) {
 			n := atomic.AddInt32(activity, 10000)
 			if n != 10000 {
 				panic(fmt.Sprintf("wlock(%d)\n", n))
@@ -213,20 +214,20 @@ func writer(rwm *LRWMutex, num_iterations int, activity *int32, cdone chan bool)
 }
 
 // Borrowed from rwmutex_test.go
-func HammerRWMutex(gomaxprocs, numReaders, num_iterations int) {
+func HammerRWMutex(gomaxprocs, numReaders, numIterations int) {
 	runtime.GOMAXPROCS(gomaxprocs)
 	// Number of active readers + 10000 * number of active writers.
 	var activity int32
 	rwm := NewLRWMutex()
 	cdone := make(chan bool)
-	go writer(rwm, num_iterations, &activity, cdone)
+	go writer(rwm, numIterations, &activity, cdone)
 	var i int
 	for i = 0; i < numReaders/2; i++ {
-		go reader(rwm, num_iterations, &activity, cdone)
+		go reader(rwm, numIterations, &activity, cdone)
 	}
-	go writer(rwm, num_iterations, &activity, cdone)
+	go writer(rwm, numIterations, &activity, cdone)
 	for ; i < numReaders; i++ {
-		go reader(rwm, num_iterations, &activity, cdone)
+		go reader(rwm, numIterations, &activity, cdone)
 	}
 	// Wait for the 2 writers and all readers to finish.
 	for i := 0; i < 2+numReaders; i++ {
