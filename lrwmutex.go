@@ -17,6 +17,7 @@
 package lsync
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -34,11 +35,12 @@ type LRWMutex struct {
 	source string
 	state  int64
 	m      sync.Mutex // Mutex to prevent multiple simultaneous locks
+	ctx    context.Context
 }
 
 // NewLRWMutex - initializes a new lsync RW mutex.
-func NewLRWMutex() *LRWMutex {
-	return &LRWMutex{}
+func NewLRWMutex(ctx context.Context) *LRWMutex {
+	return &LRWMutex{ctx: ctx}
 }
 
 // Lock holds a write lock on lm.
@@ -115,6 +117,13 @@ func (lm *LRWMutex) lockLoop(id, source string, timeout time.Duration, isWriteLo
 		if time.Now().UTC().Sub(start) >= timeout { // Are we past the timeout?
 			break
 		}
+		select {
+		case <-lm.ctx.Done():
+			// Return if the context was cancelled (ex. the client might have disconnected)
+			break
+		default:
+		}
+
 		// We timed out on the previous lock, incrementally wait
 		// for a longer back-off time and try again afterwards.
 	}
