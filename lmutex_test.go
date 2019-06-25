@@ -19,6 +19,7 @@
 package lsync_test
 
 import (
+	"context"
 	"testing"
 
 	"time"
@@ -28,14 +29,15 @@ import (
 
 func HammerLMutex(m *LMutex, loops int, cdone chan bool) {
 	for i := 0; i < loops; i++ {
-		m.Lock()
-		m.Unlock()
+		if m.GetLock("", "", time.Duration(1<<63-1)) {
+			m.Unlock()
+		}
 	}
 	cdone <- true
 }
 
 func TestLMutex(t *testing.T) {
-	m := NewLMutex()
+	m := NewLMutex(context.Background())
 	c := make(chan bool)
 	for i := 0; i < 10; i++ {
 		go HammerLMutex(m, 1000, c)
@@ -56,7 +58,7 @@ func HammerLMutexWithTimeout(m *LMutex, loops int, cdone chan bool) {
 }
 
 func TestLMutexWithTimeout(t *testing.T) {
-	m := NewLMutex()
+	m := NewLMutex(context.Background())
 	c := make(chan bool)
 	for i := 0; i < 10; i++ {
 		go HammerLMutexWithTimeout(m, 1000, c)

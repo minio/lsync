@@ -17,6 +17,7 @@
 package lsync
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 )
@@ -26,11 +27,12 @@ type LMutex struct {
 	id     string
 	source string
 	state  int64
+	ctx    context.Context
 }
 
 // NewLMutex - initializes a new lsync mutex.
-func NewLMutex() *LMutex {
-	return &LMutex{}
+func NewLMutex(ctx context.Context) *LMutex {
+	return &LMutex{ctx: ctx}
 }
 
 // Lock holds a lock on lm.
@@ -57,6 +59,11 @@ func (lm *LMutex) lockLoop(id, source string, timeout time.Duration) bool {
 	// We timed out on the previous lock, incrementally wait
 	// for a longer back-off time and try again afterwards.
 	for range newRetryTimerSimple(doneCh) {
+		select {
+		case <-lm.ctx.Done():
+			break
+		default:
+		}
 
 		// Try to acquire the lock.
 		if atomic.CompareAndSwapInt64(&lm.state, NOLOCKS, WRITELOCK) {
